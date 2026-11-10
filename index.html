@@ -1,121 +1,16 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ClassRoom</title>
-<style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f6fb;--card:#fff;--tx:#1e2433;--mu:#6b7487;--bd:#e1e5ee;--pr:#4f46e5;--pt:#fff;--ok:#16a34a;--no:#dc2626;--so:#eef0fb}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141722;--card:#1d2130;--tx:#e8ebf5;--mu:#98a0b5;--bd:#2c3248;--pr:#818cf8;--pt:#14162a;--ok:#4ade80;--no:#f87171;--so:#262b42}}
-:root[data-theme="dark"]{--bg:#141722;--card:#1d2130;--tx:#e8ebf5;--mu:#98a0b5;--bd:#2c3248;--pr:#818cf8;--pt:#14162a;--ok:#4ade80;--no:#f87171;--so:#262b42}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans Thai","Sarabun",system-ui,sans-serif;line-height:1.55}
-.wrap{max-width:980px;margin:auto;padding:16px}
-header{background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-header .wrap{display:flex;align-items:center;gap:10px;padding:10px 16px}
-header b{font-size:1.1rem}header .sp{flex:1}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.cl{cursor:pointer;transition:.15s}.cl:hover{border-color:var(--pr);transform:translateY(-2px)}
-h2,h3{margin:0 0 10px}
-input,select,textarea,button{font:inherit;color:var(--tx)}
-input,select,textarea{background:var(--bg);border:1px solid var(--bd);border-radius:9px;padding:8px 10px;max-width:100%}
-textarea{width:100%;min-height:70px}
-button{background:var(--pr);color:var(--pt);border:0;border-radius:9px;padding:8px 14px;cursor:pointer;font-weight:600}
-button.g{background:var(--so);color:var(--tx)}button.d{background:transparent;color:var(--no);padding:4px 8px}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
-.tabs button{background:var(--card);color:var(--mu);border:1px solid var(--bd);white-space:nowrap}
-.tabs button.on{background:var(--pr);color:var(--pt);border-color:var(--pr)}
-.tw{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:.92rem}
-th,td{padding:8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
-th{color:var(--mu);font-weight:600}
-td input[type=number]{width:62px}
-.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;background:var(--so)}
-.ok{color:var(--ok)}.no{color:var(--no)}.mu{color:var(--mu);font-size:.88rem}
-.bar{height:8px;background:var(--so);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--pr)}
-.login{max-width:380px;margin:8vh auto}
-.ann{border-left:4px solid var(--pr);padding:6px 12px;margin-bottom:10px;background:var(--so);border-radius:0 9px 9px 0}
-.stat{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.stat div{flex:1;min-width:110px;background:var(--so);border-radius:11px;padding:10px;text-align:center}.stat b{display:block;font-size:1.4rem}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ClassRoom – ระบบจัดการชั้นเรียน</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="app"></div>
-<script>
-const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-const API='https://script.google.com/macros/s/AKfycbwF7wiaKmaYkinNPppqNtrIguq4FtH6sWvHhdqK5XsD7uolcu-QZTMWEKjm0R3nSDw5/exec';
-let D={users:[],classes:[]},me=null,cur=null,tab='stu',msg='',DEL=[],busy=0,cred=null,last='',stTxt='';
-function st(t){stTxt=t;const x=document.getElementById('st');if(x)x.textContent=t}
-async function api(a,d){const r=await fetch(API,{method:'POST',body:JSON.stringify({a,u:cred.u,p:cred.p,d})});return r.json()}
-function apply(x){if(x.error)return false;me=x.me;D=x;return true}
-function save(){if(!me||me.role!=='teacher')return;busy++;st('⏳ กำลังบันทึก...');
-api('save',{classes:D.classes.filter(c=>c.owner===me.u),del:DEL.splice(0)}).then(()=>{busy--;st('🟢 บันทึกแล้ว')}).catch(()=>{busy--;st('⚠ บันทึกไม่สำเร็จ')})}
-const nm=u=>(D.users.find(x=>x.u===u)||{name:u}).name;
-const gc=id=>D.classes.find(c=>c.id===id);
-const V=id=>document.getElementById(id).value.trim();
-const grade=p=>p>=80?'A':p>=70?'B':p>=60?'C':p>=50?'D':'F';
-function calc(c,u){let s=0,m=0,n=0;c.works.forEach(w=>{if(w.sub[u])n++;const v=w.score[u];if(v!==undefined&&v!==''){s+=+v;m+=+w.max}});const p=m?s/m*100:0;return{s,m,n,p,g:m?grade(p):'-'}}
-function R(){const a=document.getElementById('app');if(cur&&me&&!gc(cur))cur=null;
-if(!me){a.innerHTML=loginV();return}
-a.innerHTML=`<header><div class="wrap"><b>🎓 ClassRoom</b><span class="tag">${me.role==='teacher'?'ครู':'นักเรียน'}</span><span class="sp"></span><span class="mu" id="st">${stTxt}</span><span class="mu">${e(me.name)}</span><button class="g" onclick="out()">ออกจากระบบ</button></div></header><div class="wrap">${me.role==='teacher'?(cur?TD():TL()):(cur?SD():SL())}</div>`}
-function loginV(){return`<div class="wrap"><div class="card login"><h2>🎓 ClassRoom</h2><p class="mu">เข้าสู่ระบบด้วยรหัสที่ครูหรือโรงเรียนกำหนดให้</p>${msg?`<p class="no">${e(msg)}</p>`:''}<div class="row"><input id="lu" placeholder="รหัสผู้ใช้ / รหัสนักเรียน" style="width:100%"></div><div class="row"><input id="lp" type="password" placeholder="รหัสผ่าน" style="width:100%" onkeydown="if(event.key==='Enter')doLogin()"></div><button style="width:100%" onclick="doLogin()">เข้าสู่ระบบ</button></div></div>`}
-async function doLogin(){cred={u:V('lu'),p:document.getElementById('lp').value};st('');
-try{const x=await api('load');if(apply(x)){msg='';try{sessionStorage.setItem('cred',JSON.stringify(cred))}catch(_){}cur=null;last=JSON.stringify(x);R()}else{msg='รหัสผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';cred=null;R()}}catch(_){msg='เชื่อมต่อฐานข้อมูลไม่ได้ (ตรวจ URL ของ Apps Script)';cred=null;R()}}
-function out(){me=null;cur=null;cred=null;try{sessionStorage.removeItem('cred')}catch(_){}R()}
-/* ---------- ครู ---------- */
-function TL(){const L=D.classes.filter(c=>c.owner===me.u);
-return`<div class="card"><h3>➕ เพิ่มชั้นเรียน</h3><div class="row"><input id="cs" placeholder="วิชา เช่น คณิตศาสตร์"><input id="cr" placeholder="ห้อง เช่น ม.1/1"><button onclick="addC()">เพิ่มห้อง</button></div></div>
-<h3>ชั้นเรียนของฉัน (${L.length})</h3>${L.length?'':'<p class="mu">ยังไม่มีชั้นเรียน</p>'}
-<div class="grid">${L.map(c=>`<div class="card cl" onclick="cur='${c.id}';tab='stu';R()"><h3>${e(c.subject)}</h3><span class="tag">ห้อง ${e(c.room)}</span><p class="mu">👥 ${c.students.length} คน · 📝 ${c.works.length} งาน</p><button class="d" onclick="event.stopPropagation();delC('${c.id}')">🗑 ลบห้อง</button></div>`).join('')}</div>`}
-function addC(){const s=V('cs'),r=V('cr');if(!s||!r)return;D.classes.push({id:uid(),owner:me.u,subject:s,room:r,code:Math.random().toString(36).slice(2,8).toUpperCase(),students:[],ann:[],works:[]});save();R()}
-function delC(id){if(confirm('ลบชั้นเรียนนี้และข้อมูลทั้งหมด?')){DEL.push(id);D.classes=D.classes.filter(c=>c.id!==id);save();R()}}
-function TD(){const c=gc(cur);
-const tabs=[['stu','👥 นักเรียน'],['work','📝 งานและคะแนน'],['ann','📢 ประกาศ'],['sum','📊 สรุปผล']];
-return`<p><button class="g" onclick="cur=null;R()">← กลับ</button></p><h2>${e(c.subject)} <span class="tag">ห้อง ${e(c.room)}</span></h2>
-<div class="tabs">${tabs.map(t=>`<button class="${tab===t[0]?'on':''}" onclick="tab='${t[0]}';R()">${t[1]}</button>`).join('')}</div>${{stu:tStu,work:tWork,ann:tAnn,sum:tSum}[tab](c)}`}
-function tStu(c){const free=D.users.filter(u=>u.role==='student'&&!c.students.includes(u.u));
-return`<div class="card"><h3>เพิ่มนักเรียนเข้าห้อง</h3><div class="row"><select id="ps"><option value="">— เลือกนักเรียนที่มีบัญชี —</option>${free.map(u=>`<option value="${u.u}">${e(u.name)} (${u.u})</option>`).join('')}</select><button onclick="addS()">เพิ่ม</button></div>
-<p class="mu">บัญชีนักเรียนและรหัสผ่านจัดการในชีต Users ของ Google Sheets</p></div>
-<div class="card tw"><h3>รายชื่อนักเรียน (${c.students.length})</h3><table><tr><th>#</th><th>ชื่อ</th><th>ผู้ใช้</th><th></th></tr>${c.students.map((u,i)=>`<tr><td>${i+1}</td><td>${e(nm(u))}</td><td>${u}</td><td><button class="d" onclick="rmS('${u}')">นำออก</button></td></tr>`).join('')||'<tr><td colspan=4 class="mu">ยังไม่มีนักเรียน</td></tr>'}</table></div>`}
-function addS(){const u=V('ps');if(!u)return;gc(cur).students.push(u);save();R()}
-function rmS(u){const c=gc(cur);c.students=c.students.filter(x=>x!==u);save();R()}
-function tWork(c){return`<div class="card"><h3>เพิ่มช่องคะแนน / งาน</h3><div class="row"><input id="wt" placeholder="ชื่องาน"><input id="wm" type="number" placeholder="คะแนนเต็ม" style="width:110px"><input id="wd" type="date"><button onclick="addW()">เพิ่มงาน</button></div></div>
-<div class="card tw"><h3>เช็กส่งงานและให้คะแนน</h3>${c.works.length?`<table><tr><th>นักเรียน</th>${c.works.map(w=>`<th>${e(w.title)}<br><span class="mu">เต็ม ${w.max}${w.due?' · กำหนด '+e(w.due):''}</span> <button class="d" onclick="delW('${w.id}')">✕</button></th>`).join('')}<th>รวม</th></tr>
-${c.students.map(u=>{const r=calc(c,u);return`<tr><td>${e(nm(u))}</td>${c.works.map(w=>`<td><label title="ส่งแล้ว"><input type="checkbox" ${w.sub[u]?'checked':''} onchange="setSub('${w.id}','${u}',this.checked)"></label> <input type="number" min="0" max="${w.max}" value="${w.score[u]??''}" onchange="setSc('${w.id}','${u}',this.value,${w.max})"></td>`).join('')}<td><b>${r.s}/${r.m}</b></td></tr>`}).join('')||`<tr><td class="mu">เพิ่มนักเรียนก่อน</td></tr>`}</table><p class="mu">☑ = ส่งงานแล้ว · ช่องตัวเลข = คะแนนที่ได้</p>`:'<p class="mu">ยังไม่มีงาน</p>'}</div>`}
-function addW(){const t=V('wt'),m=+V('wm');if(!t||!(m>0))return alert('กรอกชื่องานและคะแนนเต็ม');gc(cur).works.push({id:uid(),title:t,max:m,due:V('wd'),sub:{},score:{}});save();R()}
-function delW(id){if(confirm('ลบงานนี้?')){const c=gc(cur);c.works=c.works.filter(w=>w.id!==id);save();R()}}
-function wk(id){return gc(cur).works.find(w=>w.id===id)}
-function setSub(id,u,v){wk(id).sub[u]=v?1:0;save()}
-function setSc(id,u,v,m){const w=wk(id);if(v===''){delete w.score[u]}else{v=Math.max(0,Math.min(+v,m));w.score[u]=v;w.sub[u]=1}save();R()}
-function tAnn(c){return`<div class="card"><h3>โพสต์ประกาศ</h3><textarea id="at" placeholder="พิมพ์ประกาศถึงนักเรียน..."></textarea><div class="row"><button onclick="addA()">ประกาศ</button></div></div>
-${c.ann.slice().reverse().map(a=>`<div class="ann">${e(a.t)}<br><span class="mu">${e(a.d)}</span> <button class="d" onclick="delA('${a.id}')">ลบ</button></div>`).join('')||'<p class="mu">ยังไม่มีประกาศ</p>'}`}
-function addA(){const t=V('at');if(!t)return;gc(cur).ann.push({id:uid(),t,d:new Date().toLocaleString('th-TH')});save();R()}
-function delA(id){const c=gc(cur);c.ann=c.ann.filter(a=>a.id!==id);save();R()}
-function tSum(c){const rs=c.students.map(u=>({u,...calc(c,u)}));const avg=rs.length?rs.reduce((a,r)=>a+r.p,0)/rs.length:0;
-const tot=rs.length*c.works.length,sent=rs.reduce((a,r)=>a+r.n,0);
-return`<div class="stat"><div><b>${c.students.length}</b>นักเรียน</div><div><b>${c.works.length}</b>งาน</div><div><b>${avg.toFixed(1)}%</b>คะแนนเฉลี่ย</div><div><b>${tot?Math.round(sent/tot*100):0}%</b>อัตราส่งงาน</div></div>
-<div class="card tw"><div class="row"><h3 style="margin:0;flex:1">ตารางสรุป</h3><button class="g" onclick="csv()">⬇ ดาวน์โหลด CSV</button></div><table><tr><th>ชื่อ</th><th>ส่งงาน</th><th>คะแนนรวม</th><th>ร้อยละ</th><th>เกรด</th></tr>${rs.map(r=>`<tr><td>${e(nm(r.u))}</td><td>${r.n}/${c.works.length}</td><td>${r.s}/${r.m}</td><td style="min-width:110px">${r.p.toFixed(1)}%<div class="bar"><i style="width:${r.p}%"></i></div></td><td><b>${r.g}</b></td></tr>`).join('')}</table></div>`}
-function csv(){const c=gc(cur);let t='\ufeffชื่อ,'+c.works.map(w=>'"'+w.title+' ('+w.max+')"').join(',')+',รวม\n';
-c.students.forEach(u=>{t+='"'+nm(u)+'",'+c.works.map(w=>w.score[u]??'').join(',')+','+calc(c,u).s+'\n'});
-const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download=c.subject+'-'+c.room+'.csv';a.click()}
-/* ---------- นักเรียน ---------- */
-function SL(){const L=D.classes.filter(c=>c.students.includes(me.u));
-return`
-<h3>ห้องเรียนของฉัน (${L.length})</h3>${L.length?'':'<p class="mu">ยังไม่ได้อยู่ในห้องใด</p>'}
-<div class="grid">${L.map(c=>{const r=calc(c,me.u);return`<div class="card cl" onclick="cur='${c.id}';R()"><h3>${e(c.subject)}</h3><span class="tag">ห้อง ${e(c.room)}</span><p class="mu">ครู: ${e(nm(c.owner))}<br>ส่งงาน ${r.n}/${c.works.length} · คะแนน ${r.s}/${r.m} (${r.g})</p><div class="bar"><i style="width:${c.works.length?r.n/c.works.length*100:0}%"></i></div></div>`}).join('')}</div>`}
-function SD(){const c=gc(cur),r=calc(c,me.u),late=w=>w.due&&!w.sub[me.u]&&w.due<new Date().toISOString().slice(0,10);
-return`<p><button class="g" onclick="cur=null;msg='';R()">← กลับ</button></p><h2>${e(c.subject)} <span class="tag">ห้อง ${e(c.room)}</span></h2>
-<div class="stat"><div><b>${r.s}/${r.m}</b>คะแนนที่ตรวจแล้ว</div><div><b>${r.m?r.p.toFixed(1)+'%':'-'}</b>ร้อยละ</div><div><b>${r.g}</b>เกรดปัจจุบัน</div><div><b>${r.n}/${c.works.length}</b>งานที่ส่ง</div></div>
-<div class="card"><h3>📢 ประกาศ</h3>${c.ann.slice().reverse().map(a=>`<div class="ann">${e(a.t)}<br><span class="mu">${e(a.d)}</span></div>`).join('')||'<p class="mu">ไม่มีประกาศ</p>'}</div>
-<div class="card tw"><h3>📝 งานและคะแนนของฉัน</h3><table><tr><th>งาน</th><th>กำหนดส่ง</th><th>สถานะ</th><th>คะแนน</th></tr>${c.works.map(w=>`<tr><td>${e(w.title)}</td><td>${e(w.due||'-')}</td><td>${w.sub[me.u]?'<span class="ok">✔ ส่งแล้ว</span>':late(w)?'<span class="no">✘ เลยกำหนด</span>':'<span class="no">ยังไม่ส่ง</span>'}</td><td>${w.score[me.u]!==undefined?`<b>${w.score[me.u]}</b>/${w.max}`:`<span class="mu">รอตรวจ /${w.max}</span>`}</td></tr>`).join('')||'<tr><td colspan=4 class="mu">ยังไม่มีงาน</td></tr>'}</table></div>`}
-try{cred=JSON.parse(sessionStorage.getItem('cred'))}catch(_){}
-if(cred){api('load').then(x=>{if(apply(x))last=JSON.stringify(x);else cred=null;R()}).catch(()=>{cred=null;R()})}else R();
-setInterval(async()=>{if(!me||busy||document.hidden)return;const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;
-try{const x=await api('load');if(x.error)return;const j=JSON.stringify(x);if(j!==last){last=j;apply(x);R()}st('🟢 '+new Date().toLocaleTimeString('th-TH'))}catch(_){st('⚠ ออฟไลน์')}},5000);
+  <!-- หน้าจอทั้งหมดถูกวาดลงในกล่องนี้โดย app.js -->
+  <div id="app"></div>
 
-</script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
