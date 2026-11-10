@@ -1,5 +1,9 @@
 /* ClassRoom – ระบบจัดการชั้นเรียน (ครู / นักเรียน)
-   ฐานข้อมูล: Google Sheets ผ่าน Apps Script (ตั้งค่า URL ในไฟล์ config.js) */
+   ฐานข้อมูล: Google Sheets ผ่าน Apps Script */
+
+// ===== ตั้งค่า: ใส่ URL เว็บแอปของ Apps Script ตรงนี้ที่เดียว =====
+// ต้องขึ้นต้นด้วย https://script.google.com/macros/s/ และลงท้ายด้วย /exec
+const API_URL = 'PASTE_APPS_SCRIPT_URL_HERE';
 
 // ===================================================================
 // ฟังก์ชันช่วยเหลือ
@@ -55,6 +59,12 @@ function render() {
 function loginView() { return `<div class="wrap"><div class="card login"><h2>🎓 ClassRoom</h2><p class="mu">เข้าสู่ระบบด้วยรหัสที่ครูหรือโรงเรียนกำหนดให้</p>${msg ? `<p class="no">${esc(msg)}</p>` : ''}<div class="row"><input id="lu" placeholder="รหัสผู้ใช้ / รหัสนักเรียน" style="width:100%"></div><div class="row"><input id="lp" type="password" placeholder="รหัสผ่าน" style="width:100%" onkeydown="if(event.key==='Enter')doLogin()"></div><button style="width:100%" onclick="doLogin()">เข้าสู่ระบบ</button></div></div>`; }
 async function doLogin() {
     cred = { u: readInput('lu'), p: document.getElementById('lp').value };
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(API_URL)) {
+        msg = 'ยังไม่ได้ใส่ URL ของ Apps Script ที่ถูกต้องในไฟล์ app.js (ต้องลงท้ายด้วย /exec)';
+        cred = null;
+        render();
+        return;
+    }
     setStatus('');
     try {
         const x = await api('load');
