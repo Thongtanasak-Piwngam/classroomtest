@@ -3,7 +3,7 @@
 
 // ===== ตั้งค่า: ใส่ URL เว็บแอปของ Apps Script ตรงนี้ที่เดียว =====
 // ต้องขึ้นต้นด้วย https://script.google.com/macros/s/ และลงท้ายด้วย /exec
-const API_URL = 'PASTE_APPS_SCRIPT_URL_HERE';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzTYOg54v3AXqPzHIABbhgsy7ioOE-vpidgfK9UeTt_eg5VvxyuqINifQj_jZMD9lqI/exec';
 
 // ===================================================================
 // ฟังก์ชันช่วยเหลือ
