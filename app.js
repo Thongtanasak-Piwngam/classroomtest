@@ -123,17 +123,19 @@ function removeStudent(u) { const c = getClass(cur); c.students = c.students.fil
 // --- แท็บ: งานและคะแนน (เช็กส่งงาน กับ ให้คะแนน แยกปุ่มบันทึกกัน) ---
 function tabWorks(c) {
     const sm = wmode === 'sub';
-    const hd = c.works.map(w => `<th>${esc(w.title)}<br><span class="mu">เต็ม ${w.max}${w.due ? ' · กำหนด ' + esc(w.due) : ''}</span><br>${sm ? `<button class="g" onclick="checkAll('${w.id}')">✓ ทั้งหมด</button>` : ''}<button class="d" onclick="deleteWork('${w.id}')">✕ ลบงาน</button></th>`).join('');
+    const hd = c.works.map(w => `<th>${esc(w.title)}<br><span class="mu">${w.max > 0 ? 'เต็ม ' + w.max : 'เช็กส่งอย่างเดียว'}${w.due ? ' · กำหนด ' + esc(w.due) : ''}</span><br>${sm ? `<button class="g" onclick="checkAll('${w.id}')">✓ ทั้งหมด</button>` : ''}<button class="d" onclick="deleteWork('${w.id}')">✕ ลบงาน</button></th>`).join('');
     const cell = (w, u) => {
         const k = w.id + '|' + u;
         if (sm) {
             const v = k in draft ? draft[k] : w.sub[u];
             return `<td><input type="checkbox" ${v ? 'checked' : ''} onchange="markDraft('${k}',this.checked?1:0)"></td>`;
         }
+        if (w.max === 0)
+            return `<td class="mu">— ไม่มีคะแนน</td>`; // งานเช็กส่งอย่างเดียว
         const v = k in draft ? draft[k] : (w.score[u] ?? '');
         return `<td><input type="number" min="0" max="${w.max}" value="${v}" oninput="markDraft('${k}',this.value)"></td>`;
     };
-    return `<div class="card"><h3>เพิ่มช่องคะแนน / งาน</h3><div class="row"><input id="wt" placeholder="ชื่องาน"><input id="wm" type="number" placeholder="คะแนนเต็ม" style="width:110px"><input id="wd" type="date"><button onclick="addWork()">เพิ่มงาน</button></div></div>
+    return `<div class="card"><h3>เพิ่มช่องคะแนน / งาน</h3><div class="row"><input id="wt" placeholder="ชื่องาน"><input id="wm" type="number" min="0" placeholder="คะแนนเต็ม (เว้นว่าง = เช็กส่งอย่างเดียว)" style="width:270px"><input id="wd" type="date"><button onclick="addWork()">เพิ่มงาน</button></div></div>
 <div class="tabs"><button class="${sm ? 'on' : ''}" onclick="setWorkMode('sub')">✅ เช็กส่งงาน</button><button class="${sm ? '' : 'on'}" onclick="setWorkMode('score')">🏆 ให้คะแนน</button></div>
 <div class="card tw"><div class="row"><h3 style="margin:0;flex:1">${sm ? 'เช็กว่านักเรียนส่งงานหรือไม่' : 'กรอกคะแนนนักเรียน'}</h3><span id="dt" class="no" style="display:${dirty ? 'inline' : 'none'}">● มีการแก้ไขที่ยังไม่บันทึก</span><button onclick="saveDraft()">💾 ${sm ? 'บันทึกการส่งงาน' : 'บันทึกคะแนน'}</button><button class="g" onclick="draft={};dirty=false;render()">ยกเลิก</button></div>
 ${c.works.length ? `<table><tr><th>นักเรียน</th>${hd}<th>${sm ? 'ส่งแล้ว' : 'รวม'}</th></tr>${c.students.map(u => { const r = calcStudent(c, u); return `<tr><td>${esc(nameOf(u))}</td>${c.works.map(w => cell(w, u)).join('')}<td><b>${sm ? r.n + '/' + c.works.length : r.s + '/' + r.m}</b></td></tr>`; }).join('') || '<tr><td class="mu">เพิ่มนักเรียนก่อน</td></tr>'}</table><p class="mu">${sm ? 'ติ๊ก = ส่งงานแล้ว แล้วกด “บันทึกการส่งงาน” (การให้คะแนนแยกคนละส่วน ไม่ทำให้ติ๊กส่งอัตโนมัติ)' : 'กรอกคะแนนแล้วกด “บันทึกคะแนน” · เว้นว่าง = ยังไม่ตรวจ'}</p>` : '<p class="mu">ยังไม่มีงาน</p>'}</div>`;
@@ -170,8 +172,8 @@ function saveDraft() {
     saveData();
     render();
 }
-function addWork() { const t = readInput('wt'), m = +readInput('wm'); if (!t || !(m > 0))
-    return alert('กรอกชื่องานและคะแนนเต็ม'); getClass(cur).works.push({ id: uid(), title: t, max: m, due: readInput('wd'), sub: {}, score: {} }); saveData(); render(); }
+function addWork() { const t = readInput('wt'), m = +readInput('wm') || 0; if (!t || m < 0)
+    return alert('กรอกชื่องาน (คะแนนเต็มเว้นว่างได้ถ้าเป็นงานเช็กส่งอย่างเดียว)'); getClass(cur).works.push({ id: uid(), title: t, max: m, due: readInput('wd'), sub: {}, score: {} }); saveData(); render(); }
 function deleteWork(id) { if (confirm('ลบงานนี้?')) {
     const c = getClass(cur);
     c.works = c.works.filter(w => w.id !== id);
@@ -197,7 +199,7 @@ function tabSummary(c) {
 }
 function exportCsv() {
     const c = getClass(cur);
-    let t = '\ufeffชื่อ,' + c.works.map(w => '"' + w.title + ' (' + w.max + ')"').join(',') + ',รวม\n';
+    let t = '\ufeffชื่อ,' + c.works.map(w => '"' + w.title + ' (' + (w.max || 'เช็กส่ง') + ')"').join(',') + ',รวม\n';
     c.students.forEach(u => { t += '"' + nameOf(u) + '",' + c.works.map(w => w.score[u] ?? '').join(',') + ',' + calcStudent(c, u).s + '\n'; });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([t], { type: 'text/csv' }));
@@ -218,7 +220,7 @@ function renderStudentDetail() {
     return `<p><button class="g" onclick="cur=null;msg='';render()">← กลับ</button></p><h2>${esc(c.subject)} <span class="tag">ห้อง ${esc(c.room)}</span></h2>
 <div class="stat"><div><b>${r.s}/${r.m}</b>คะแนนที่ตรวจแล้ว</div><div><b>${r.m ? r.p.toFixed(1) + '%' : '-'}</b>ร้อยละ</div><div><b>${r.g}</b>เกรดปัจจุบัน</div><div><b>${r.n}/${c.works.length}</b>งานที่ส่ง</div></div>
 <div class="card"><h3>📢 ประกาศ</h3>${c.ann.slice().reverse().map(a => `<div class="ann">${esc(a.t)}<br><span class="mu">${esc(a.d)}</span></div>`).join('') || '<p class="mu">ไม่มีประกาศ</p>'}</div>
-<div class="card tw"><h3>📝 งานและคะแนนของฉัน</h3><table><tr><th>งาน</th><th>กำหนดส่ง</th><th>สถานะ</th><th>คะแนน</th></tr>${c.works.map(w => `<tr><td>${esc(w.title)}</td><td>${esc(w.due || '-')}</td><td>${w.sub[me.u] ? '<span class="ok">✔ ส่งแล้ว</span>' : late(w) ? '<span class="no">✘ เลยกำหนด</span>' : '<span class="no">ยังไม่ส่ง</span>'}</td><td>${w.score[me.u] !== undefined ? `<b>${w.score[me.u]}</b>/${w.max}` : `<span class="mu">รอตรวจ /${w.max}</span>`}</td></tr>`).join('') || '<tr><td colspan=4 class="mu">ยังไม่มีงาน</td></tr>'}</table></div>`;
+<div class="card tw"><h3>📝 งานและคะแนนของฉัน</h3><table><tr><th>งาน</th><th>กำหนดส่ง</th><th>สถานะ</th><th>คะแนน</th></tr>${c.works.map(w => `<tr><td>${esc(w.title)}</td><td>${esc(w.due || '-')}</td><td>${w.sub[me.u] ? '<span class="ok">✔ ส่งแล้ว</span>' : late(w) ? '<span class="no">✘ เลยกำหนด</span>' : '<span class="no">ยังไม่ส่ง</span>'}</td><td>${w.max === 0 ? '<span class="mu">เช็กส่งอย่างเดียว</span>' : w.score[me.u] !== undefined ? `<b>${w.score[me.u]}</b>/${w.max}` : `<span class="mu">รอตรวจ /${w.max}</span>`}</td></tr>`).join('') || '<tr><td colspan=4 class="mu">ยังไม่มีงาน</td></tr>'}</table></div>`;
 }
 // ===================================================================
 // เริ่มต้นแอป และดึงข้อมูลใหม่ทุก 5 วินาที (เกือบเรียลไทม์)
